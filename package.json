@@ -1,0 +1,29 @@
+{
+  "name": "research-library",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "prisma generate && vite build",
+    "start": "prisma migrate deploy && node server/index.js",
+    "dev:server": "node --env-file=.env --watch server/index.js",
+    "dev:client": "vite"
+  },
+  "dependencies": {
+    "@mozilla/readability": "^0.6.0",
+    "@prisma/client": "^6.16.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "express": "^5.1.0",
+    "jsdom": "^26.1.0",
+    "multer": "^2.0.2",
+    "pdf-parse": "1.1.1",
+    "prisma": "^6.16.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.28.0",
+    "vite": "^5.4.11"
+  }
+}

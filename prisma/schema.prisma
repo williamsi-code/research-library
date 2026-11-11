@@ -1,0 +1,103 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Topic {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  sources     Source[]
+  notes       Note[]
+}
+
+model Source {
+  id              String       @id @default(cuid())
+  title           String
+  author          String?
+  siteName        String?
+  kind            String // web | pdf | text
+  url             String?
+  publishedAt     String?
+  filePath        String?
+  fileName        String?
+  mimeType        String?
+  text            String
+  segments        Json         @default("[]")
+  excerpt         String?
+  whySaved        String?
+  summary         String?
+  status          String       @default("to_read") // to_read | reading | read | archived
+  tags            String[]     @default([])
+  topicId         String?
+  topic           Topic?       @relation(fields: [topicId], references: [id], onDelete: SetNull)
+  processing      String       @default("pending") // pending | processing | ready | failed
+  processingError String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  chunks          Chunk[]
+  highlights      Highlight[]
+  noteLinks       NoteSource[]
+
+  @@index([topicId])
+  @@index([url])
+}
+
+model Chunk {
+  id        String                       @id @default(cuid())
+  sourceId  String
+  source    Source                       @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  idx       Int
+  startPos  Int
+  endPos    Int
+  text      String
+  location  String?
+  embedding Unsupported("vector(1536)")?
+
+  @@index([sourceId])
+}
+
+model Highlight {
+  id             String    @id @default(cuid())
+  sourceId       String
+  source         Source    @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  quote          String
+  startPos       Int?
+  endPos         Int?
+  location       String?
+  note           String?
+  tags           String[]  @default([])
+  createdAt      DateTime  @default(now())
+  lastReviewedAt DateTime?
+  reviewCount    Int       @default(0)
+
+  @@index([sourceId])
+}
+
+model Note {
+  id        String       @id @default(cuid())
+  title     String
+  body      String       @default("")
+  tags      String[]     @default([])
+  topicId   String?
+  topic     Topic?       @relation(fields: [topicId], references: [id], onDelete: SetNull)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  sources   NoteSource[]
+
+  @@index([topicId])
+}
+
+model NoteSource {
+  noteId   String
+  sourceId String
+  note     Note   @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  source   Source @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+
+  @@id([noteId, sourceId])
+}
