@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../api.js';
 import TopicSelect from '../components/TopicSelect.jsx';
 
@@ -7,8 +7,9 @@ const passageLink = (c) =>
   `/sources/${c.sourceId}?at=${c.startPos}&end=${c.endPos}`;
 
 export default function Ask() {
-  const [question, setQuestion] = useState('');
-  const [topicId, setTopicId] = useState(null);
+  const [params] = useSearchParams();
+  const [question, setQuestion] = useState(params.get('q') || '');
+  const [topicId, setTopicId] = useState(params.get('topic') || null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [history, setHistory] = useState([]);

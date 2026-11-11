@@ -43,7 +43,10 @@ export default function Library() {
   return (
     <div className="page">
       <div className="page-head">
-        <h1>{topic ? topic.name : 'Library'}</h1>
+        <h1>
+          {topic ? topic.name : 'Library'}
+          {topic && <Link to={`/topics/${topic.id}`} className="h1-link">Open topic page</Link>}
+        </h1>
         <button className="primary" onClick={() => setAdding((a) => !a)} aria-expanded={adding}>
           {adding ? 'Close' : 'Add source'}
         </button>

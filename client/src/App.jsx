@@ -9,6 +9,7 @@ import Ask from './pages/Ask.jsx';
 import Search from './pages/Search.jsx';
 import Review from './pages/Review.jsx';
 import Settings from './pages/Settings.jsx';
+import Topic from './pages/Topic.jsx';
 
 const TopicsContext = createContext({ topics: [], reload: () => {} });
 export const useTopics = () => useContext(TopicsContext);
@@ -39,7 +40,7 @@ export default function App() {
   if (authed === null) return <div className="boot" aria-busy="true" />;
   if (!authed) return <Login onSignedIn={() => setAuthed(true)} />;
 
-  const activeTopic = new URLSearchParams(location.search).get('topic');
+  const activeTopic = location.pathname.match(/^\/topics\/([^/]+)/)?.[1] || new URLSearchParams(location.search).get('topic');
 
   return (
     <TopicsContext.Provider value={{ topics, reload }}>
@@ -67,7 +68,7 @@ export default function App() {
             <ul className="topic-list">
               {topics.map((t) => (
                 <li key={t.id}>
-                  <Link to={`/?topic=${t.id}`} className={activeTopic === t.id ? 'active' : ''}>
+                  <Link to={`/topics/${t.id}`} className={activeTopic === t.id ? 'active' : ''}>
                     <span>{t.name}</span>
                     <span className="count">{t._count.sources}</span>
                   </Link>
@@ -86,6 +87,8 @@ export default function App() {
             <Route path="/sources/:id" element={<Source />} />
             <Route path="/notes" element={<Notes />} />
             <Route path="/notes/:id" element={<Notes />} />
+            <Route path="/topics/:id" element={<Topic />} />
+            <Route path="/topics/:id/:tab" element={<Topic />} />
             <Route path="/ask" element={<Ask />} />
             <Route path="/search" element={<Search />} />
             <Route path="/review" element={<Review />} />

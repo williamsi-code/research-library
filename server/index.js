@@ -8,6 +8,7 @@ import highlightsRouter from './routes/highlights.js';
 import notesRouter from './routes/notes.js';
 import askRouter from './routes/ask.js';
 import clipRouter from './routes/clip.js';
+import topicToolsRouter from './routes/topicTools.js';
 import { topicsRouter, searchRouter, reviewRouter, settingsRouter, exportRouter } from './routes/misc.js';
 import { resumePending } from './lib/ingest.js';
 
@@ -26,6 +27,7 @@ app.use('/api', requireAuth);
 app.use('/api/sources', sourcesRouter);
 app.use('/api/highlights', highlightsRouter);
 app.use('/api/notes', notesRouter);
+app.use('/api/topics/:topicId', topicToolsRouter);
 app.use('/api/topics', topicsRouter);
 app.use('/api/search', searchRouter);
 app.use('/api/ask', askRouter);

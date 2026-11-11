@@ -16,6 +16,12 @@ Stack: Node.js/Express, Prisma, Postgres with pgvector, and React (Vite). It run
 - **AI summary**: per-source summary, key claims and suggested tags, clearly labelled as AI-written.
 - **Review**: brings back three older highlights at a time and asks what you think now. Your reply is added to the highlight's note with the date.
 - **Export**: everything as Markdown or JSON from Settings.
+- **Topic pages**: click a topic in the sidebar. Each topic has five tabs:
+  - **Overview**: the topic's sources and notes in one place.
+  - **Research next**: a checklist of questions and things to look into. "Suggest what to research next" has the AI find gaps, open questions and disagreements in your material. Each item links to Ask, with the question filled in.
+  - **Timeline**: dated events in order, with gaps between them shown. Add events yourself, or "Find dates in my sources" lists dated events the AI found. You choose which to keep, and each links to its passage.
+  - **Map**: two visuals. "Concepts" is an AI-drawn map of the key ideas and how they connect, with sources for each. "Your sources and notes" shows how your notes, sources and shared tags link together.
+  - **Quiz**: multiple-choice and recall questions written from your sources and highlights. Questions you get wrong, or haven't seen for a while, come up more often.
 
 ## Set it up on Railway
 

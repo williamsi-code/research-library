@@ -11,9 +11,14 @@ model Topic {
   id          String   @id @default(cuid())
   name        String   @unique
   description String?
-  createdAt   DateTime @default(now())
-  sources     Source[]
-  notes       Note[]
+  createdAt      DateTime        @default(now())
+  conceptMap     Json?
+  conceptMapAt   DateTime?
+  sources        Source[]
+  notes          Note[]
+  researchItems  ResearchItem[]
+  timelineEvents TimelineEvent[]
+  quizQuestions  QuizQuestion[]
 }
 
 model Source {
@@ -43,6 +48,8 @@ model Source {
   chunks          Chunk[]
   highlights      Highlight[]
   noteLinks       NoteSource[]
+  timelineEvents  TimelineEvent[]
+  quizQuestions   QuizQuestion[]
 
   @@index([topicId])
   @@index([url])
@@ -100,4 +107,60 @@ model NoteSource {
   source   Source @relation(fields: [sourceId], references: [id], onDelete: Cascade)
 
   @@id([noteId, sourceId])
+}
+
+model ResearchItem {
+  id          String    @id @default(cuid())
+  topicId     String
+  topic       Topic     @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  text        String
+  note        String?
+  done        Boolean   @default(false)
+  aiSuggested Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  doneAt      DateTime?
+
+  @@index([topicId])
+}
+
+model TimelineEvent {
+  id          String   @id @default(cuid())
+  topicId     String
+  topic       Topic    @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  dateLabel   String
+  sortValue   Float?
+  title       String
+  description String?
+  sourceId    String?
+  source      Source?  @relation(fields: [sourceId], references: [id], onDelete: SetNull)
+  startPos    Int?
+  endPos      Int?
+  location    String?
+  aiExtracted Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@index([topicId])
+}
+
+model QuizQuestion {
+  id           String    @id @default(cuid())
+  topicId      String
+  topic        Topic     @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  kind         String // multiple_choice | recall
+  question     String
+  options      Json      @default("[]")
+  answerIndex  Int?
+  answer       String?
+  explanation  String?
+  sourceId     String?
+  source       Source?   @relation(fields: [sourceId], references: [id], onDelete: SetNull)
+  startPos     Int?
+  endPos       Int?
+  location     String?
+  timesAsked   Int       @default(0)
+  timesCorrect Int       @default(0)
+  lastAskedAt  DateTime?
+  createdAt    DateTime  @default(now())
+
+  @@index([topicId])
 }

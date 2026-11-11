@@ -41,7 +41,7 @@ export default function Settings({ onSignedOut }) {
   }
 
   async function deleteTopic(t) {
-    if (!window.confirm(`Delete the topic “${t.name}”? Its sources and notes stay in your library without a topic.`)) return;
+    if (!window.confirm(`Delete the topic “${t.name}”? Its sources and notes stay in your library without a topic. Its research list, timeline, map and quiz questions are deleted.`)) return;
     await api(`/topics/${t.id}`, { method: 'DELETE' });
     reload();
   }
