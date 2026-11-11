@@ -16,11 +16,17 @@ Stack: Node.js/Express, Prisma, Postgres with pgvector, and React (Vite). It run
 - **AI summary**: per-source summary, key claims and suggested tags, clearly labelled as AI-written.
 - **Review**: brings back three older highlights at a time and asks what you think now. Your reply is added to the highlight's note with the date.
 - **Export**: everything as Markdown or JSON from Settings.
+- **Backups**: a full backup every week, the last 8 kept on the server, a download button, and restore. Optional weekly email with Resend.
+- **Photos of pages**: photograph book pages and the AI reads the text. Passages you've underlined or highlighted on paper become highlights. Scanned PDFs are read the same way.
+- **Video and audio**: YouTube links fetch the transcript when YouTube allows it, otherwise paste it. Audio files up to 25 MB are transcribed. Timestamps link back to the moment in the video or recording.
+- **Save from your phone**: install the app on Android and it appears in the Share menu. On iPhone, a one-time Shortcut does the same (instructions in Settings).
+- **Related in other topics**: each source shows passages elsewhere in your library that discuss similar ideas. Needs the OpenAI key.
 - **Topic pages**: click a topic in the sidebar. Each topic has five tabs:
   - **Overview**: the topic's sources and notes in one place.
   - **Research next**: a checklist of questions and things to look into. "Suggest what to research next" has the AI find gaps, open questions and disagreements in your material. Each item links to Ask, with the question filled in.
   - **Timeline**: dated events in order, with gaps between them shown. Add events yourself, or "Find dates in my sources" lists dated events the AI found. You choose which to keep, and each links to its passage.
   - **Map**: two visuals. "Concepts" is an AI-drawn map of the key ideas and how they connect, with sources for each. "Your sources and notes" shows how your notes, sources and shared tags link together.
+  - **Explain it**: write what you understand from memory, then check it against your sources. Each statement is marked supported, partly right, contradicted, or not covered, with links, plus the key points you left out.
   - **Quiz**: multiple-choice and recall questions written from your sources and highlights. Questions you get wrong, or haven't seen for a while, come up more often.
 
 ## Set it up on Railway
@@ -50,6 +56,7 @@ Railway's standard Postgres doesn't include pgvector, so use the pgvector templa
    - `UPLOAD_DIR`: `/data/uploads`
    - `ANTHROPIC_API_KEY`: from console.anthropic.com. Needed for Ask and Summarize.
    - `OPENAI_API_KEY`: from platform.openai.com. Needed for search by meaning. Without it, search matches exact words only.
+   - Optional, for weekly backups by email: `RESEND_API_KEY` (free at resend.com) and `BACKUP_EMAIL` (the address you signed up to Resend with).
 3. Go to **Settings → Volumes** (or right-click the service and add a volume), and mount a volume at `/data`. Without this, uploaded files disappear on every deploy.
 4. Under **Settings → Networking**, click **Generate Domain**.
 5. Railway deploys automatically. The first start creates the database tables.

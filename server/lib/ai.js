@@ -8,7 +8,8 @@ export const claudeModel = () => process.env.CLAUDE_MODEL || 'claude-sonnet-5-5'
 // The database column is vector(1536), which matches text-embedding-3-small.
 const EMBEDDING_MODEL = process.env.EMBEDDING_MODEL || 'text-embedding-3-small';
 
-export async function askClaude({ system, prompt, maxTokens = 2000 }) {
+// prompt can be a string or an array of content blocks (text, image, document).
+export async function askClaude({ system, prompt, maxTokens = 2000, timeoutMs = 120_000 }) {
   if (!aiEnabled()) throw httpError(400, 'AI is off. Add ANTHROPIC_API_KEY in Railway variables to use it.');
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
@@ -23,7 +24,7 @@ export async function askClaude({ system, prompt, maxTokens = 2000 }) {
       system,
       messages: [{ role: 'user', content: prompt }],
     }),
-    signal: AbortSignal.timeout(120_000),
+    signal: AbortSignal.timeout(timeoutMs),
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
@@ -65,4 +66,23 @@ export function parseJsonReply(text) {
   const start = cleaned.indexOf('{');
   const end = cleaned.lastIndexOf('}');
   return JSON.parse(cleaned.slice(start, end + 1));
+}
+
+// Audio transcription with timestamps (OpenAI). Files must be 25 MB or smaller.
+export async function transcribeAudio(buffer, fileName, mimeType) {
+  if (!embeddingsEnabled()) throw httpError(400, 'Transcribing audio needs OPENAI_API_KEY in Railway variables.');
+  if (buffer.length > 25 * 1024 * 1024) throw httpError(413, 'Audio files must be 25 MB or smaller to transcribe.');
+  const form = new FormData();
+  form.append('file', new Blob([buffer], { type: mimeType || 'audio/mpeg' }), fileName || 'audio.mp3');
+  form.append('model', 'whisper-1');
+  form.append('response_format', 'verbose_json');
+  const res = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+    method: 'POST',
+    headers: { authorization: `Bearer ${process.env.OPENAI_API_KEY}` },
+    body: form,
+    signal: AbortSignal.timeout(15 * 60_000),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(`Transcription failed: ${data?.error?.message || res.status}`);
+  return (data.segments || []).map((s) => ({ start: s.start, text: s.text }));
 }

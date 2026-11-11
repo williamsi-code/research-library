@@ -14,6 +14,8 @@ model Topic {
   createdAt      DateTime        @default(now())
   conceptMap     Json?
   conceptMapAt   DateTime?
+  explanationDraft String?
+  explanationChecks ExplanationCheck[]
   sources        Source[]
   notes          Note[]
   researchItems  ResearchItem[]
@@ -26,7 +28,7 @@ model Source {
   title           String
   author          String?
   siteName        String?
-  kind            String // web | pdf | text
+  kind            String // web | pdf | text | scan | video | audio
   url             String?
   publishedAt     String?
   filePath        String?
@@ -43,6 +45,7 @@ model Source {
   topic           Topic?       @relation(fields: [topicId], references: [id], onDelete: SetNull)
   processing      String       @default("pending") // pending | processing | ready | failed
   processingError String?
+  pendingOcr      Json?
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
   chunks          Chunk[]
@@ -163,4 +166,21 @@ model QuizQuestion {
   createdAt    DateTime  @default(now())
 
   @@index([topicId])
+}
+
+model ExplanationCheck {
+  id        String   @id @default(cuid())
+  topicId   String
+  topic     Topic    @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  body      String
+  result    Json
+  createdAt DateTime @default(now())
+
+  @@index([topicId])
+}
+
+model AppSetting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
 }

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { api } from '../api.js';
+import { api, formatDate } from '../api.js';
 import { useTopics } from '../App.jsx';
 
 function bookmarkletCode(origin, token) {
@@ -116,6 +116,10 @@ export default function Settings({ onSignedOut }) {
         <p className="hint">Asking a question sends only the passages most relevant to it. Summarize sends that one source.</p>
       </section>
 
+      <PhoneSection />
+
+      <BackupSection />
+
       <section className="settings-block">
         <h2>Export</h2>
         <p>Download everything: sources, highlights, notes and topics.</p>
@@ -129,5 +133,133 @@ export default function Settings({ onSignedOut }) {
         <button onClick={signOut}>Sign out</button>
       </section>
     </div>
+  );
+}
+
+function PhoneSection() {
+  const shareBase = `${window.location.origin}/share?url=`;
+  const [copied, setCopied] = useState(false);
+  return (
+    <section className="settings-block">
+      <h2>Save from your phone</h2>
+      <h3 className="small">Android</h3>
+      <ol className="steps">
+        <li>Open this site in Chrome on your phone and sign in.</li>
+        <li>Tap the ⋮ menu, then <strong>Add to Home screen</strong> or <strong>Install app</strong>.</li>
+        <li>From now on, tap <strong>Share</strong> in any app and choose <strong>Research</strong>.</li>
+      </ol>
+      <h3 className="small">iPhone</h3>
+      <p>iPhones don’t let web apps appear in the Share menu, so use a Shortcut. You only set this up once.</p>
+      <ol className="steps">
+        <li>Open the <strong>Shortcuts</strong> app and tap <strong>+</strong> to make a new shortcut. Name it “Save to library”.</li>
+        <li>Tap the <strong>ⓘ</strong> (or the name at the top) and turn on <strong>Show in Share Sheet</strong>. Set it to receive <strong>URLs</strong> and <strong>Safari web pages</strong>.</li>
+        <li>Add the action <strong>URL Encode</strong>. It encodes the Shortcut Input.</li>
+        <li>Add the action <strong>Text</strong>, paste the address below, then insert the <strong>URL Encoded Text</strong> variable right after it.</li>
+        <li>Add the action <strong>Open URLs</strong>, using the Text from the step before.</li>
+      </ol>
+      <p className="code-line"><code>{shareBase}</code></p>
+      <button className="small-btn" onClick={() => navigator.clipboard.writeText(shareBase).then(() => setCopied(true))}>
+        {copied ? 'Copied' : 'Copy address'}
+      </button>
+      <p className="hint">Then in Safari, or any app, tap Share and choose “Save to library”. Sign in once in Safari so the app knows it’s you. To get an app icon too, open this site in Safari, tap Share, then Add to Home Screen.</p>
+    </section>
+  );
+}
+
+function BackupSection() {
+  const [data, setData] = useState(null);
+  const [running, setRunning] = useState(false);
+  const [restoring, setRestoring] = useState(false);
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
+
+  const load = () => api('/backup').then(setData).catch((e) => setError(e.message));
+  useEffect(() => {
+    load();
+  }, []);
+
+  async function runNow() {
+    setRunning(true);
+    setError('');
+    try {
+      await api('/backup/run', { method: 'POST' });
+      await load();
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setRunning(false);
+    }
+  }
+
+  async function restore(e) {
+    const file = e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    if (!window.confirm('Restore from this backup? Anything in it that’s missing here is added. Nothing you have now is changed or removed.')) return;
+    setRestoring(true);
+    setError('');
+    setMessage('');
+    try {
+      const form = new FormData();
+      form.append('file', file);
+      const result = await api('/backup/restore', { method: 'POST', form });
+      setMessage(`Restored from the backup of ${formatDate(result.backupDate)}. ${result.sourcesAdded} source${result.sourcesAdded === 1 ? ' was' : 's were'} added and ${result.sourcesAdded === 1 ? 'is' : 'are'} being re-indexed for search.`);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setRestoring(false);
+    }
+  }
+
+  const last = data?.last;
+  const size = (n) => (n > 1024 * 1024 ? `${(n / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`);
+
+  return (
+    <section className="settings-block">
+      <h2>Backups</h2>
+      <p>
+        A full backup is made automatically once a week: every source’s text, your highlights, notes, topics, timelines, quizzes and explanations.
+        The last 8 are kept on the server, and you can download one at any time.
+      </p>
+      {data && (
+        <p className={last ? '' : 'notice warn'}>
+          {last
+            ? `Last backup: ${formatDate(last.at)} (${last.counts.sources} sources, ${last.counts.highlights} highlights, ${last.counts.notes} notes).`
+            : 'No backup has been made yet. The first one runs a couple of minutes after the app starts, or make one now.'}
+          {last?.emailed && ` Emailed to ${data.email}.`}
+          {last?.emailError && ` The email didn’t send: ${last.emailError}`}
+        </p>
+      )}
+      {data && !data.email && (
+        <p className="hint">
+          Backups stored on the server don’t protect you if the server itself is lost. To get each weekly backup by email, sign up at resend.com (free), then add
+          <code>RESEND_API_KEY</code> and <code>BACKUP_EMAIL</code> (the address you signed up with) in Railway variables. Or download a backup here every so often.
+        </p>
+      )}
+      <p className="row-actions">
+        <a className="button-like" href="/api/backup/download" download>Download a backup now</a>
+        <button onClick={runNow} disabled={running}>{running ? 'Backing up…' : 'Back up now'}</button>
+        <label className="button-like file-button">
+          {restoring ? 'Restoring…' : 'Restore from a backup'}
+          <input type="file" accept=".gz,.json,application/gzip,application/json" onChange={restore} disabled={restoring} hidden />
+        </label>
+      </p>
+      {message && <p className="notice">{message}</p>}
+      {error && <p className="error">{error}</p>}
+      {data?.files?.length > 0 && (
+        <details className="more">
+          <summary>Backups stored on the server ({data.files.length})</summary>
+          <ul className="plain-list small">
+            {data.files.map((f) => (
+              <li key={f.name}>
+                <a href={`/api/backup/files/${encodeURIComponent(f.name)}`} download>{formatDate(f.createdAt)}</a>
+                <span className="muted"> {size(f.size)}</span>
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
+      <p className="hint">Original uploaded files (PDFs, photos, audio) aren’t included, but the text read from them is.</p>
+    </section>
   );
 }

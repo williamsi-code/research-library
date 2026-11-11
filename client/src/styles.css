@@ -486,3 +486,49 @@ mark.active { background: var(--hl-active); box-shadow: 0 2px 0 var(--accent); }
   .tl-body { grid-column: 2; }
   .tl-gap { padding-left: 2rem; }
 }
+
+/* ---------- Additions: time marks, related, explain, share, settings ---------- */
+a.page-mark.time { text-decoration: none; }
+a.page-mark.time::before { color: var(--accent); border-color: var(--accent); cursor: pointer; }
+a.page-mark.time::after { content: ''; }
+a.page-mark.time:hover::before { background: var(--accent-soft); }
+.related-list { gap: 0.9rem; }
+.related-list li { display: flex; flex-direction: column; gap: 0.15rem; }
+.related-title { font-weight: 700; }
+.related-text { font-family: var(--read); font-size: 0.88rem; color: var(--muted); margin: 0.15rem 0; }
+
+.explain-box {
+  min-height: 40vh; font-family: var(--read); font-size: 1.08rem; line-height: 1.7;
+  max-width: 46rem; display: block;
+}
+.check-history { display: flex; align-items: center; gap: 0.6rem; margin: 1.5rem 0 0.5rem; max-width: 46rem; }
+.check-history select { width: auto; flex: 1; }
+.check { max-width: 46rem; border-top: 1px solid var(--line); margin-top: 1.25rem; padding-top: 1.25rem; }
+.check-summary { font-family: var(--read); font-size: 1.05rem; line-height: 1.65; }
+.claims { list-style: none; padding: 0; margin: 1rem 0; display: flex; flex-direction: column; gap: 0.75rem; }
+.claim { background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--line); border-radius: 8px; padding: 0.7rem 0.9rem; }
+.claim p { margin: 0.2rem 0 0; }
+.claim-text { font-family: var(--read); }
+.claim-comment { font-size: 0.93rem; }
+.verdict { font-size: 0.78rem; font-weight: 700; }
+.v-supported { border-left-color: #3a8a5c; }
+.v-supported .verdict { color: #3a8a5c; }
+.v-partly { border-left-color: #c9932b; }
+.v-partly .verdict { color: #a5761c; }
+.v-contradicted { border-left-color: var(--danger); }
+.v-contradicted .verdict { color: var(--danger); }
+.v-none .verdict { color: var(--muted); }
+@media (prefers-color-scheme: dark) {
+  .v-supported .verdict { color: #7cc79a; }
+  .v-partly .verdict { color: #e2b45a; }
+}
+.gaps-head { font-size: 1rem; margin-top: 1.5rem; }
+.gaps { padding-left: 1.2rem; display: flex; flex-direction: column; gap: 0.5rem; }
+
+.field-label { font-size: 0.875rem; font-weight: 700; }
+.shared-url, .shared-text { margin: 0; overflow-wrap: anywhere; font-family: var(--read); }
+
+.steps { padding-left: 1.3rem; display: flex; flex-direction: column; gap: 0.35rem; max-width: 62ch; }
+.settings-block h3 { margin: 1rem 0 0.4rem; }
+.code-line { overflow-wrap: anywhere; }
+.file-button { cursor: pointer; }

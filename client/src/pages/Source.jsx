@@ -45,7 +45,7 @@ export default function Source() {
 
   // Keep checking while the source is being processed in the background.
   useEffect(() => {
-    if (!source || !['pending', 'processing'].includes(source.processing)) return;
+    if (!source || !['pending', 'processing', 'transcribing'].includes(source.processing)) return;
     const t = setTimeout(load, 3000);
     return () => clearTimeout(t);
   }, [source, load]);
@@ -171,7 +171,13 @@ export default function Source() {
   if (error) return <div className="page"><p className="error">{error}</p><Link to="/">Back to library</Link></div>;
   if (!source) return <div className="page"><p className="muted">Loading…</p></div>;
 
-  const busy = ['pending', 'processing'].includes(source.processing);
+  const busy = ['pending', 'processing', 'transcribing'].includes(source.processing);
+  const ytId = source.kind === 'video' && source.url ? youtubeIdFromUrl(source.url) : null;
+  const timeHref = ytId
+    ? (sec) => `https://www.youtube.com/watch?v=${ytId}&t=${sec}s`
+    : source.kind === 'audio' && source.filePath
+    ? (sec) => `/api/sources/${id}/file#t=${sec}`
+    : null;
 
   return (
     <div className="reader-layout">
@@ -184,7 +190,10 @@ export default function Source() {
             .filter(Boolean)
             .join(', ')}
         </p>
-        {busy && <p className="notice">Preparing this source for search. You can read and highlight while that happens.</p>}
+        {source.processing === 'transcribing' && (
+          <p className="notice">{source.processingError || 'Reading the pages'}. The text appears here when it’s done. You can leave this page and come back.</p>
+        )}
+        {busy && source.processing !== 'transcribing' && <p className="notice">Preparing this source for search. You can read and highlight while that happens.</p>}
         {source.processing === 'failed' && (
           <p className="notice warn">
             Search preparation failed: {source.processingError}{' '}
@@ -201,6 +210,7 @@ export default function Source() {
           focus={focus}
           activeId={activeId}
           onMarkClick={onMarkClick}
+          timeHref={timeHref}
         />
       </article>
 
@@ -311,6 +321,8 @@ export default function Source() {
           </ul>
         </section>
 
+        <Related id={id} ready={source.processing === 'ready'} />
+
         <section className="side-block">
           <div className="side-block-head">
             <h2>Notes</h2>
@@ -364,4 +376,42 @@ function BlurTextarea({ value, onSave, ...rest }) {
   const [v, setV] = useState(value);
   useEffect(() => setV(value), [value]);
   return <textarea {...rest} value={v} onChange={(e) => setV(e.target.value)} onBlur={() => v !== value && onSave(v)} />;
+}
+
+function youtubeIdFromUrl(url) {
+  try {
+    const u = new URL(url);
+    if (u.hostname.endsWith('youtu.be')) return u.pathname.slice(1);
+    return u.searchParams.get('v') || u.pathname.match(/\/(shorts|embed|live)\/([\w-]+)/)?.[2] || null;
+  } catch {
+    return null;
+  }
+}
+
+function Related({ id, ready }) {
+  const [data, setData] = useState(null);
+  useEffect(() => {
+    if (!ready) return;
+    api(`/sources/${id}/related`).then(setData).catch(() => setData({ related: [] }));
+  }, [id, ready]);
+  if (!ready || !data) return null;
+  if (data.reason === 'needs-embeddings') return null;
+  return (
+    <section className="side-block">
+      <h2>Related in other topics</h2>
+      {!data.related.length && <p className="muted small">Nothing similar elsewhere in your library yet.</p>}
+      <ul className="plain-list related-list">
+        {data.related.map((r) => (
+          <li key={r.sourceId}>
+            <Link to={`/sources/${r.sourceId}?at=${r.startPos}&end=${r.endPos}`} className="related-title">{r.sourceTitle}</Link>
+            <span className="hl-loc">{[r.topicName || 'No topic', r.location].filter(Boolean).join(', ')}</span>
+            <p className="related-text">{r.text}</p>
+            <Link to={`/sources/${id}?at=${r.mine.startPos}&end=${r.mine.endPos}`} className="small">
+              Similar to {r.mine.location || 'a passage'} here
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
 }

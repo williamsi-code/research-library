@@ -9,6 +9,8 @@ import notesRouter from './routes/notes.js';
 import askRouter from './routes/ask.js';
 import clipRouter from './routes/clip.js';
 import topicToolsRouter from './routes/topicTools.js';
+import backupRouter from './routes/backup.js';
+import { startBackupSchedule } from './lib/backup.js';
 import { topicsRouter, searchRouter, reviewRouter, settingsRouter, exportRouter } from './routes/misc.js';
 import { resumePending } from './lib/ingest.js';
 
@@ -34,6 +36,7 @@ app.use('/api/ask', askRouter);
 app.use('/api/review', reviewRouter);
 app.use('/api/settings', settingsRouter);
 app.use('/api/export', exportRouter);
+app.use('/api/backup', backupRouter);
 app.use('/api', (req, res) => res.status(404).json({ error: 'Not found' }));
 
 // React app
@@ -63,4 +66,5 @@ app.listen(port, () => {
   console.log(`Research library running on port ${port}`);
   if (!process.env.APP_PASSWORD) console.warn('APP_PASSWORD is not set — nobody can sign in until you add it.');
   resumePending().catch((e) => console.error('resume', e));
+  startBackupSchedule();
 });

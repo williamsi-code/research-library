@@ -1,5 +1,7 @@
+import { Prisma } from '@prisma/client';
 import { prisma } from '../db.js';
-import { chunkText } from './chunk.js';
+import { chunkText, makeLocator } from './chunk.js';
+import { transcribePhotos, transcribeScannedPdf, transcribeAudioFile } from './transcribe.js';
 import { embed, embeddingsEnabled, toVector } from './ai.js';
 
 // One source at a time, in the background, so saving feels instant.
@@ -10,20 +12,60 @@ export function enqueue(sourceId) {
   return queue;
 }
 
+async function transcribePending(source) {
+  const pending = source.pendingOcr;
+  const onProgress = (message) =>
+    prisma.source.update({ where: { id: source.id }, data: { processing: 'transcribing', processingError: message } });
+  const run =
+    pending.type === 'images' ? transcribePhotos :
+    pending.type === 'pdf' ? transcribeScannedPdf :
+    pending.type === 'audio' ? transcribeAudioFile :
+    null;
+  if (!run) throw new Error(`Unknown transcription type: ${pending.type}`);
+  const result = await run(pending, onProgress);
+  if (!result.text) throw new Error('No readable text was found.');
+
+  await prisma.source.update({
+    where: { id: source.id },
+    data: { text: result.text, segments: result.segments, pendingOcr: Prisma.DbNull, processing: 'processing', processingError: null },
+  });
+  // Passages you marked on paper become highlights.
+  const locate = makeLocator(result.text, result.segments);
+  for (const quote of result.marked || []) {
+    const idx = result.text.indexOf(quote);
+    await prisma.highlight.create({
+      data: {
+        sourceId: source.id,
+        quote,
+        startPos: idx >= 0 ? idx : null,
+        endPos: idx >= 0 ? idx + quote.length : null,
+        location: idx >= 0 ? locate(idx) : null,
+        note: 'Marked on the page',
+      },
+    });
+  }
+  return result.note || null;
+}
+
 async function processSource(id) {
-  const source = await prisma.source.findUnique({ where: { id } });
+  let source = await prisma.source.findUnique({ where: { id } });
   if (!source) return;
   await prisma.source.update({ where: { id }, data: { processing: 'processing', processingError: null } });
   try {
+    let transcriptNote = null;
+    if (source.pendingOcr) {
+      transcriptNote = await transcribePending(source);
+      source = await prisma.source.findUnique({ where: { id } });
+    }
     await prisma.chunk.deleteMany({ where: { sourceId: id } });
     const chunks = chunkText(source.text, Array.isArray(source.segments) ? source.segments : []);
     if (chunks.length) {
       await prisma.chunk.createMany({ data: chunks.map((c) => ({ ...c, sourceId: id })) });
     }
 
-    let note = null;
+    let note = transcriptNote;
     if (!embeddingsEnabled()) {
-      note = 'Keyword search only. Add OPENAI_API_KEY to search by meaning.';
+      note = [transcriptNote, 'Keyword search only. Add OPENAI_API_KEY to search by meaning.'].filter(Boolean).join(' ');
     } else if (chunks.length) {
       const rows = await prisma.chunk.findMany({
         where: { sourceId: id },
@@ -50,7 +92,7 @@ async function processSource(id) {
 
 export async function resumePending() {
   const pending = await prisma.source.findMany({
-    where: { processing: { in: ['pending', 'processing'] } },
+    where: { processing: { in: ['pending', 'processing', 'transcribing'] } },
     select: { id: true },
   });
   pending.forEach((s) => enqueue(s.id));
@@ -81,6 +123,9 @@ export async function createSource(fields) {
       whySaved: fields.whySaved || null,
       tags: cleanTags(fields.tags),
       topicId: fields.topicId || null,
+      pendingOcr: fields.pendingOcr || undefined,
+      processing: fields.pendingOcr ? 'transcribing' : 'pending',
+      processingError: fields.pendingOcr ? 'Waiting to start reading' : null,
     },
   });
   enqueue(source.id);

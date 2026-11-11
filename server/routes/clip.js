@@ -3,6 +3,7 @@ import { prisma } from '../db.js';
 import { safeEqual } from '../auth.js';
 import { extractFromHtml, fetchPage, extractFromPdf } from '../lib/extract.js';
 import { createSource } from '../lib/ingest.js';
+import { youtubeId, fetchYoutube } from '../lib/media.js';
 import { makeLocator } from '../lib/chunk.js';
 
 // The bookmarklet posts the page you're looking at (including pages behind logins)
@@ -43,7 +44,14 @@ router.post('/', async (req, res) => {
     if (!source) {
       let extracted;
       let kind = 'web';
-      if (html && html.length > 200) {
+      if (url && youtubeId(url)) {
+        try {
+          extracted = { ...(await fetchYoutube(youtubeId(url))), siteName: 'YouTube' };
+          kind = 'video';
+        } catch (e) {
+          return res.status(422).send(page('Video not saved', esc(e.message) + ' Use Add source → Video or audio in your library to paste it.'));
+        }
+      } else if (html && html.length > 200) {
         extracted = extractFromHtml(html, url);
       } else if (url) {
         const fetched = await fetchPage(url);

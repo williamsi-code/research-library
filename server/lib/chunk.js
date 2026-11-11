@@ -34,7 +34,7 @@ function splitLong(text, a, b) {
 
 export function makeLocator(text, segments = []) {
   const paras = paragraphSpans(text);
-  const pages = segments.filter((s) => s.kind === 'page').sort((x, y) => x.start - y.start);
+  const pages = segments.filter((s) => s.kind === 'page' || s.kind === 'time').sort((x, y) => x.start - y.start);
   const headings = segments.filter((s) => s.kind === 'heading').sort((x, y) => x.start - y.start);
 
   const lastBefore = (list, pos) => {

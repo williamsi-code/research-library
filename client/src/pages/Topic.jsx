@@ -6,9 +6,11 @@ import ResearchNext from './topic/ResearchNext.jsx';
 import Timeline from './topic/Timeline.jsx';
 import MapView from './topic/MapView.jsx';
 import Quiz from './topic/Quiz.jsx';
+import Understanding from './topic/Understanding.jsx';
 
 const TABS = [
   ['', 'Overview'],
+  ['explain', 'Explain it'],
   ['research', 'Research next'],
   ['timeline', 'Timeline'],
   ['map', 'Map'],
@@ -69,6 +71,7 @@ export default function Topic() {
       </nav>
 
       {tab === '' && <Overview id={id} data={data} />}
+      {tab === 'explain' && <Understanding topicId={id} topicName={data.topic.name} hasSources={data.sources.length > 0} />}
       {tab === 'research' && <ResearchNext topicId={id} onChange={load} />}
       {tab === 'timeline' && <Timeline topicId={id} sources={data.sources} onChange={load} />}
       {tab === 'map' && <MapView topicId={id} hasSources={data.sources.length > 0} />}

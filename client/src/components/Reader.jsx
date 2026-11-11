@@ -20,7 +20,7 @@ function buildPieces(text, segments, highlights, focus) {
     points.add(s.start);
     points.add(s.end);
   });
-  const pageAt = new Map(segments.filter((s) => s.kind === 'page').map((s) => [s.start, s.label]));
+  const pageAt = new Map(segments.filter((s) => s.kind === 'page' || s.kind === 'time').map((s) => [s.start, s]));
   pageAt.forEach((_, pos) => points.add(pos));
   if (focus) {
     points.add(focus.start);
@@ -45,7 +45,7 @@ function buildPieces(text, segments, highlights, focus) {
   return pieces;
 }
 
-const Reader = forwardRef(function Reader({ text, segments, highlights, focus, activeId, onMarkClick, focusRef }, ref) {
+const Reader = forwardRef(function Reader({ text, segments, highlights, focus, activeId, onMarkClick, focusRef, timeHref }, ref) {
   const pieces = useMemo(() => buildPieces(text, segments || [], highlights || [], focus), [text, segments, highlights, focus]);
 
   return (
@@ -67,7 +67,11 @@ const Reader = forwardRef(function Reader({ text, segments, highlights, focus, a
         }
         return (
           <span key={p.a} className={cls} ref={p.focusStart ? focusRef : undefined}>
-            {p.page && <span className="page-mark" data-label={p.page} aria-label={p.page} />}
+            {p.page && p.page.kind === 'time' && timeHref ? (
+              <a className="page-mark time" data-label={p.page.label} aria-label={`Play from ${p.page.label}`} href={timeHref(p.page.seconds)} target="_blank" rel="noreferrer" />
+            ) : p.page ? (
+              <span className="page-mark" data-label={p.page.label} aria-label={p.page.label} />
+            ) : null}
             {node}
           </span>
         );

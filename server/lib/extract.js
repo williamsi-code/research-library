@@ -190,7 +190,9 @@ export async function extractFromPdf(buffer, fallbackTitle) {
     text += p;
   });
   if (!text.replace(/\s/g, '')) {
-    throw httpError(400, 'This PDF has no selectable text (it may be a scan). Scanned PDFs aren’t supported yet.');
+    const err = httpError(400, 'This PDF has no selectable text (it may be a scan). Add ANTHROPIC_API_KEY to have scanned pages read by AI.');
+    err.code = 'NO_TEXT';
+    throw err;
   }
   return {
     title: (info.Title && String(info.Title).trim()) || fallbackTitle || 'Untitled PDF',

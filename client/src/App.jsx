@@ -10,6 +10,7 @@ import Search from './pages/Search.jsx';
 import Review from './pages/Review.jsx';
 import Settings from './pages/Settings.jsx';
 import Topic from './pages/Topic.jsx';
+import Share from './pages/Share.jsx';
 
 const TopicsContext = createContext({ topics: [], reload: () => {} });
 export const useTopics = () => useContext(TopicsContext);
@@ -89,6 +90,7 @@ export default function App() {
             <Route path="/notes/:id" element={<Notes />} />
             <Route path="/topics/:id" element={<Topic />} />
             <Route path="/topics/:id/:tab" element={<Topic />} />
+            <Route path="/share" element={<Share />} />
             <Route path="/ask" element={<Ask />} />
             <Route path="/search" element={<Search />} />
             <Route path="/review" element={<Review />} />
